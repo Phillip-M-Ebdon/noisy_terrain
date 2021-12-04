@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Perlin noise</title>
+	</head>
+	<style>
+
+        #content {
+            display: grid;
+            grid-template-columns: auto auto;
+            grid-template-rows: auto;
+        }
+
+		canvas {
+			/* position: absolute; */
+			/* top: -50%; left: -50%; */
+			transform: translate(-50%, 0%);
+			border: 1px solid black;
+		}
+
+        #controls {
+            align-items: flex-start;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-button {
+            width: fit-content;
+        }
+
+        .setting {
+            display: grid;
+            max-width: 20vw;
+            grid-template-columns: 5fr 4fr 1fr;
+            margin: 0.5vw;
+        }
+
+        .setting > label {
+            width: fit-content;
+            align-self: center;
+            font-size: 1.5em
+        }
+
+        .setting > input, select {
+            width: 90%;
+            align-self: center;
+            margin-left: 0.25vw;
+        }
+
+        .setting > div {
+            align-self: center;
+        }
+
+	</style>
+	<body>
+        <div id="content">
+            <div id="controls">
+                <h2> Settings </h2>
+                <!-- <button onclick="drawNoise()"> Draw </button>             -->
+                <div class="control-button">
+                    <button id="reseedButton"> Reseed </button>
+                </div>
+
+                <div class="setting">
+                    <label> Frequency Start</label>
+                    <input type="range" id="freqSlider" min="1" max="500" value="50">
+                    <div id="freqValue"> </div>
+                </div>
+                
+                <div class="setting">
+                    <label> Height Offset (3D Only) </label>
+                    <input type="range" id="heightSlider" min="0" max="255" value="50">
+                    <div id="heightValue"> </div>
+                </div>
+                
+                <div class="setting">
+                    <label> Octave Count</label>
+                    <input type="range" id="octaveSlider" min="1" max="8" value="1">
+                    <div id="octaveValue"> </div>
+                </div>
+                
+                <div class="setting">
+                    <label> Threshold Step</label>
+                    <input type="range" id="thresholdSlider" min="1" max="100" value="1">
+                    <div id="thresholdValue"> </div>
+                </div>
+
+                <div class="setting">
+                    <label> Amplification </label>
+                    <input type="range" id="thresholdSlider" min="1" max="100" value="1">
+                    <div id="thresholdValue"> </div>
+                </div>
+
+                <div class="setting">
+                    <label> Visual Mode </label>
+                    <select id="visualSelect"> 
+                        <option value="2"> 2D </option>
+                        <option value="3"> 3D </option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <canvas id="map-2d" width="500" height="500"></canvas>
+                <div id="map-3d" style="display:none; width: 500; height: 500;"></div>
+            </div>
+        </div>
+
+        <script type="module" src="./noise.js"></script>
+    </body>
+</html>
