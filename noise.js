@@ -74,6 +74,12 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                     return new Vector2(vector[0], vector[1]);
                 }
 
+                /**
+                 * Generates a noise value for a coordindate, bounded between 0 and 1
+                 * @param {*} x
+                 * @param {*} y 
+                 * @returns 
+                 */
                 getNoise(x, y){
                     
                     // get corner of square point exists within
@@ -119,8 +125,10 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 }
             }
             
-
-            const noise2Dgen = new NoiseGenerator2D();
+            // 2d generators
+            const height2Dgen = new NoiseGenerator2D(); // elevation
+            const moi2Dgen = new NoiseGenerator2D(); // moisture
+            const temp2Dgen = new NoiseGenerator2D(); // temperature
 
             // settings
             const reseedButton = document.getElementById("reseedButton")
@@ -136,6 +144,9 @@ import * as THREE from 'https://cdn.skypack.dev/three';
             const map2d = document.getElementById("map-2d");
             const map3d = document.getElementById("map-3d");
 
+            // texture settings
+            const textureMode = document.getElementById("textureMode");
+
             function drawNoise() {
                 const mode = visualSelect.value;
                 if (mode == "2") {
@@ -150,10 +161,45 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 }
             }
 
+            
+
+            /**
+             * Find the value between 0 and 1, that represents it as a percentage of closeness to the upper from lower
+             * where 0 means value <= lower, and 1 means value = upper, hence value > 1 means value > upper.
+             * @param {*} value , value to convert to percentage
+             * @param {*} lower , the lowest bound of percentage
+             * @param {*} upper , the upper bound for 100%
+             * @returns float between 0 and 1
+             */
+            function percentBetween(value, lower, upper) {
+                let shifted = value - lower
+                if (shifted <= 0) {
+                    return 0;
+                }
+                
+                return shifted / upper;
+            }
+
+            /**
+             * Convert a value given its own bounds, into the value it would be if it had the new bounds
+             * @param {*} value value to convert
+             * @param {*} valuesBounds bounds of the supplied value
+             * @param {*} newBounds bounds to fit the value between
+             */
+            function mapValue(value, valuesBounds, newBounds) {
+                const valuePercentage = percentBetween(value, valuesBounds[0], valuesBounds[1])
+                const newValue = ((newBounds[1] - newBounds[0]) * valuePercentage) + newBounds[0]
+                return newValue
+            }
+
+            /**
+             * Uses the height2Dgen object to generate a grid of noise give a width and height
+             * @param {*} width number of rows
+             * @param {*} height number of columns
+             * @returns a grid of values representing noise, values bounded to 0 and 255
+             */
             function generateHeightGrid(width, height) {
                 let heights = []
-                let min = null;
-                let max = null;
                 for (let y = 0; y < width; y++){
                     heights.push([])
                     for (let x = 0; x < height; x++){
@@ -163,7 +209,7 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                         let octaveCount = parseInt(octaveSlider.value);
                         let finalMultiplier = 0.0;
                         for(let octave = 0; octave < octaveCount; octave++){
-                            let value = a * noise2Dgen.getNoise(x * f, y * f);
+                            let value = a * height2Dgen.getNoise(x * f, y * f);
                             finalMultiplier += a;
                             total += value
                             a *= 0.5;
@@ -172,13 +218,6 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                         
                         total *= (1/finalMultiplier)
                         
-                        if (min == null || min > total) {
-                            min = total
-                        }
-                        
-                        if (max == null || max < total) {
-                            max = total
-                        }
 
                         let step = parseInt(thresholdSlider.value)
                         let rgb = Math.round(total * 255);
@@ -187,9 +226,210 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                         heights[y].push(rgb)
                     }
                 }
-                console.log(heights)
-                console.log(min, max)
                 return heights
+            }
+
+            /**
+             * generates a temperature map for a give altitude map, using noise values which are then bounded between -10 and a max of 40
+             * the max temperature is inversely proporitional to temp, with the max height of 255 being -10 to -10 
+             * @param {*} width number of rows
+             * @param {*} height number of columns 
+             * @param {*} heightGrid grid of equal width and height containing altitudes ranging from 0 and 255
+             * @re
+             */
+            function generateTemperatureGrid(width, height, heightGrid) {
+                let temperatures = []
+                let f = parseInt(freqSlider.value) / 100000.0;
+
+                for (let y = 0; y < width; y++){
+                    temperatures.push([])
+                    for (let x = 0; x < height; x++){
+                        // want temperatures smooth, no octaves
+                        let temp = temp2Dgen.getNoise(x * f, y * f);
+
+                        // altitude sets the upper bound for temperature, inversley proportional
+                        // aka higher is colder
+                        let altitude = heightGrid[y][x]
+                        let maxTemp = 40 - 10 * percentBetween(altitude, 0, 255) // yeah this sucks, should be using constants or variables. whoops.
+                        temp = mapValue(temp, [0, 1], [-10, maxTemp])
+
+                        temperatures[y].push(temp)
+                    }
+                }
+                return temperatures
+            }
+
+            /**
+             * generate a very simple grid of noise to act in place of moisture/humidity
+             * values on a grid are bounded to 0 and 1, representing 0% and 100% moisture/humidity
+             * the temperature dictates the maxmimum moisture, where colder reduced maximum
+             * 
+             * @param {*} width 
+             * @param {*} height 
+             * @returns 
+             */
+            function generateMoistureGrid(width, height, temperatures) {
+                let moistures = []
+                let f = parseInt(freqSlider.value) / 100000.0;
+
+                for (let y = 0; y < width; y++){
+                    moistures.push([])
+                    for (let x = 0; x < height; x++){
+                        // want moisture to be smooth, no octaves
+                        let moisture = moi2Dgen.getNoise(x * f, y * f);
+                        const temp = temperatures[y][x];
+                        const maxMoisture = percentBetween(temp, -10, 40) * 100
+                        moisture = mapValue(moisture, [0, 1], [0, maxMoisture])
+                        moistures[y].push(moisture)
+                    }
+                }
+                return moistures
+            }
+
+            const BIOME_COLOURS = {
+                "snow": "rgb(255, 255, 255)",
+                "borealForest": "rgb(14, 56, 46)",
+                "forest": "rgb(0, 51, 20)",
+                "rainForest": "rgb(34, 140, 34)",
+                "tropicalForest": "rgb(125, 186, 7)",
+                "grassland": "rgb(198, 204, 81)",
+                "savanna": "rgb(251, 208, 116)",
+                "desert": "rgb(222, 189, 149)",
+                "mountain": "rgb(168, 171, 180)",
+                "waterShallow": "rgb(80, 127, 169)",
+                "waterDeep": "rgb(10, 70, 107)"
+            }
+
+            function simulateBiomes(heightGrid) {
+                const width = heightGrid[0].length
+                const height = heightGrid.length
+                let tempGrid = generateTemperatureGrid(width, height, heightGrid);
+                let moiGrid = generateMoistureGrid(width, height, tempGrid);
+
+                console.log(Math.min)
+
+                const max = Math.max(...[].concat(...tempGrid));
+                const min = Math.min(...[].concat(...tempGrid));
+                console.log(max);
+                console.log(min);
+
+                console.log(heightGrid, tempGrid, moiGrid)
+
+                let rgbMap = [];
+                for (let y = 0; y < width; y++){
+                    rgbMap.push([])
+                    for (let x = 0; x < height; x++){
+                        let alt = heightGrid[y][x];
+                        let moi = moiGrid[y][x];
+                        let temp = tempGrid[y][x];
+                        let biome;
+
+                        // overrides
+                        if (alt > 200 || alt < 90) {
+                            // mountains
+                            if (alt > 225) biome = "snow"
+                            else if (alt > 200) biome = "mountain"
+                            // water
+                            else if (alt > 50) biome = "waterShallow"
+                            else biome = "waterDeep"
+                        } 
+                        else {
+                            // cold
+                            if (temp <= 0) {
+                                // but enough moisture
+                                if (moi > 15) biome = "borealForest"
+                                // nothing but ice
+                                else biome = "snow"
+                            }
+
+                            // temperate
+                            else if (temp > 0 && temp < 20) {
+                                // just right, but a little drier
+                                if (moi < 20) biome = "grassland"
+                                // enought moisture for something more
+                                else biome = "forest"
+                            }
+
+                            // hot
+                            else {
+                                // and dry
+                                if (moi < 20) biome = "desert"
+                                // a little mositure
+                                else if (moi < 40) biome = "savanna"
+                                // a lot of moisture
+                                else if (moi < 70 )biome = "rainForest"
+                                // welcome to the tropics
+                                else biome = "tropicalForest"
+                            }
+                        }
+                        rgbMap[y].push(BIOME_COLOURS[biome])
+                    }
+                    
+                }
+                return rgbMap;
+            }
+
+            /**
+             * Output a grid of RGB values acting as a texture for a heightGrid
+             * colours chosen to roughly mimic a world-map / atlas style diagram
+             * @param {*} heightGrid 
+             * @returns 
+             */
+            function generateAtlasMap(heightGrid) {
+                const width = heightGrid[0].length
+                const height = heightGrid.length
+                let rgbMap = [];
+                for (let y = 0; y < width; y++){
+                    rgbMap.push([])
+                    for (let x = 0; x < height; x++){
+                        let alt = heightGrid[y][x];
+                        if (alt < 75) { rgbMap[y].push(`rgb(${157},${200 + percentBetween(alt, 0, 74) * 25 },${255}`) }
+                        else if (alt < 90) { rgbMap[y].push( `rgb(${195},${210 + percentBetween(alt,0, 90) * 25},${255}`) }
+                        else if (alt < 100) { rgbMap[y].push( `rgb(${255},${210 + percentBetween(alt,90, 100) * 40},${190 + percentBetween(alt,90, 100) * 10}`) }
+                        else if (alt < 125) { rgbMap[y].push( `rgb(${180},${220 + percentBetween(alt,100, 124) * 30},${180 + percentBetween(alt,100, 124) * 20}`) }
+                        else if (alt < 150) { rgbMap[y].push( `rgb(${170},${200 + percentBetween(alt,125, 149) * 10},${170 + percentBetween(alt,125, 149) * 10}`) }
+                        else if (alt < 200) { rgbMap[y].push( `rgb(${200 + percentBetween(alt,150, 199) * 55},${180},${150}`) }
+                        else rgbMap[y].push( `rgb(${250 + percentBetween(alt,250, 255) * 5},${250 + percentBetween(alt,250, 255) * 5},${250 + percentBetween(alt,250, 255) * 5}`)
+                    }
+                }
+                return rgbMap
+            }
+
+            /**
+             * Return the appropriate grid of RGB values to be interpreted as a texture
+             * @param {*} heightGrid 
+             * @returns 
+             */
+            function heightToRGB(heightGrid) {
+                const mode = textureMode.value;
+
+                switch (mode) {
+                
+                case "atlas":
+                    // some arbitrary colours in a switch to emulate an Atlas or world map
+                    return generateAtlasMap(heightGrid)
+                    break;
+
+                case "simulate":
+                    // whack
+                    return simulateBiomes(heightGrid)
+                    break;
+
+                default:
+                    // output greyscale
+                    let rgbMap = [];
+                    const width = heightGrid[0].length
+                    const height = heightGrid.length
+                    for (let y = 0; y < width; y++){
+                        rgbMap.push([])
+                        for (let x = 0; x < height; x++){
+                            let alt = heightGrid[y][x]
+                            rgbMap[y].push(`rgb(${alt},${alt},${alt}`)
+                        }
+                    }
+                    return rgbMap
+                    break;
+                }
             }
 
             let renderer, controls, scene, camera;
@@ -241,18 +481,18 @@ import * as THREE from 'https://cdn.skypack.dev/three';
 
                 offset = smoothCheck.checked ? offset * ( amplification / (parseFloat(freqSlider.value))) : offset
                 
+                let rgbMap = heightToRGB(heights)
 
                 for (let y = 0; y < heights.length; y++) {
                     for (let x = 0; x < heights[y].length; x++) {
                         // data.push(x, heights[y][x], y)
-                        let rgb = heights[y][x];
-                        let height = rgb;
+                        let height = heights[y][x];
                         if (smoothCheck.checked) {
                             // Smoth the 3D so the frequency acts as a ZOOM, not, Density
-                            height = height * ( amplification / (parseFloat(freqSlider.value)))
-                        }
+                            height = height * (amplification / (parseFloat(freqSlider.value))) - amplification / parseFloat(freqSlider.value) 
+                        }   
                         data.push(height - offset);
-                        context.fillStyle = `rgb(${rgb},${rgb},${rgb}`
+                        context.fillStyle = rgbMap[y][x];
                         context.fillRect(x, y, 1, 1)
                     }
                 }
@@ -318,10 +558,11 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 // let freqSlider = document.getElementById("freqSlider").value;
                 // let heightSlider = document.getElementById("heightSlider").value;
                 let heights = generateHeightGrid(500, 500);
+                let rgbMap = heightToRGB(heights);
                 for (let y = 0; y < 500; y++){
                     for (let x = 0; x < 500; x++){ 
                         let rgb = heights[y][x]
-                        canvas.fillStyle = "rgba("+rgb+","+rgb+","+rgb+",1.0)";
+                        canvas.fillStyle = rgbMap[y][x]
                         canvas.fillRect(x, y, 1, 1)
                     }
                 }
@@ -361,8 +602,31 @@ import * as THREE from 'https://cdn.skypack.dev/three';
             }
 
             reseedButton.onclick = function() {
-                noise2Dgen.reseed();
+                height2Dgen.reseed();
+                moi2Dgen.reseed();
+                temp2Dgen.reseed();
                 drawNoise()
+            }
+
+            const paletteDiv = document.getElementById("palette")
+
+            textureMode.onchange  = function() {
+                drawNoise();
+                while(paletteDiv.firstChild) {
+                    paletteDiv.removeChild(paletteDiv.firstChild)
+                }
+
+                if (textureMode.value == "simulate") {
+                    Object.keys(BIOME_COLOURS).forEach(biome => {
+                        let colourSwash = document.createElement("div")
+                        colourSwash.className = "colour-swash"
+                        colourSwash.style.background = BIOME_COLOURS[biome]
+                        colourSwash.innerText = biome;
+
+                        paletteDiv.appendChild(colourSwash)
+                    })
+                }
+
             }
 
             function init() {
@@ -371,6 +635,7 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 document.getElementById("octaveValue").innerText = octaveSlider.value
                 document.getElementById("thresholdValue").innerText = thresholdSlider.value
                 document.getElementById("ampValue").innerText = ampSlider.value
+                textureMode.value = "grey"
                 drawNoise();
             }
 

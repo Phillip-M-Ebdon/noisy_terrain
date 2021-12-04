@@ -12,15 +12,17 @@
             grid-template-columns: auto auto;
             grid-template-rows: auto;
         }
+    
+      .mainCanvas {
+        /* position: absolute; */
+        /* top: -50%; left: -50%; */
+        /* transform: translate(-50%, 0%); */
+        display: block;
+        border: 1px solid black;
+      }
 
-		canvas {
-			/* position: absolute; */
-			/* top: -50%; left: -50%; */
-			transform: translate(-50%, 0%);
-			border: 1px solid black;
-		}
 
-        #controls {
+        .control-panel {
             align-items: flex-start;
             display: flex;
             flex-direction: column;
@@ -56,8 +58,8 @@
 	</style>
 	<body>
         <div id="content">
-            <div id="controls">
-                <h2> Settings </h2>
+            <div id="controls" class="control-panel">
+                <h2> General Settings </h2>
                 <!-- <button onclick="drawNoise()"> Draw </button>             -->
                 <div class="control-button">
                     <button id="reseedButton"> Reseed </button>
@@ -110,9 +112,36 @@
                 </div>
 
             </div>
-            <div>
-                <canvas id="map-2d" width="500" height="500"></canvas>
+
+            <div id="map">
+                <canvas class="mainCanvas" id="map-2d" width="500" height="500"></canvas>
                 <div id="map-3d" style="display:none; width: 500; height: 500;"></div>
+                <canvas id="tempCanvas"  style="display:none;" width="50" height="50"></canvas>
+                <canvas id="moistureCanvas" style="display:none;" width="50" height="50"></canvas>
+            </div>
+
+            <div id="texture">
+              <div id="textureControls" class="control-panel"> 
+                <h2> Texture Controls </h2>
+                
+                <div class="setting">
+                  <label> Texture Mode </label>
+                    <select id="textureMode"> 
+                        <option value="grey"> Greyscale </option>
+                        <option value="atlas"> Pseudo Realistic </option>
+                        <option value="simulate"> Simulated </option>
+                        <option value="custom"> Custom</option>
+                    </select>
+                </div>
+
+                <div>
+                  <h3> Palette </h3>
+                  <div id="palette">
+
+                  </div>
+                </div>
+
+              </div>
             </div>
         </div>
 
