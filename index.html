@@ -70,12 +70,6 @@
                 </div>
                 
                 <div class="setting">
-                    <label> Height Offset (3D Only) </label>
-                    <input type="range" id="heightSlider" min="0" max="255" value="50">
-                    <div id="heightValue"> </div>
-                </div>
-                
-                <div class="setting">
                     <label> Octave Count</label>
                     <input type="range" id="octaveSlider" min="1" max="8" value="1">
                     <div id="octaveValue"> </div>
@@ -88,18 +82,33 @@
                 </div>
 
                 <div class="setting">
-                    <label> Amplification </label>
-                    <input type="range" id="thresholdSlider" min="1" max="100" value="1">
-                    <div id="thresholdValue"> </div>
-                </div>
-
-                <div class="setting">
                     <label> Visual Mode </label>
                     <select id="visualSelect"> 
                         <option value="2"> 2D </option>
                         <option value="3"> 3D </option>
                     </select>
                 </div>
+
+                <h2> 3D settings </h2>
+
+                <div class="setting">
+                  <label> Height Offset (3D Only) </label>
+                  <input type="range" id="heightSlider" min="0" max="255" value="50">
+                  <div id="heightValue"> </div>
+                </div>
+
+                <div class="setting">
+                    <label> Smooth 3D </label>
+                    <input type="checkbox" id="smoothCheckbox">
+                </div>
+
+                
+                <div class="setting">
+                  <label> Amplification (Only works if smoothed) </label>
+                  <input type="range" id="ampSlider" min="1" max="100" value="1">
+                  <div id="ampValue"> </div>
+                </div>
+
             </div>
             <div>
                 <canvas id="map-2d" width="500" height="500"></canvas>

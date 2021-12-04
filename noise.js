@@ -89,12 +89,6 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                     let bottomRight = new Vector2(xDiff - 1.0, yDiff);
                     let topRight = new Vector2(xDiff - 1.0, yDiff-1.0);
 
-                    // corner values
-                    let valueBottomLeft = this.permutations.get2(xPrime, yPrime); 
-                    let valueTopLeft = this.permutations.get2(xPrime+1, yPrime);
-                    let valueBottomRight = this.permutations.get2(xPrime, yPrime+1);
-                    let valueTopRight = this.permutations.get2(xPrime+1, yPrime+1);
-
                     // vectors on corners
                     let topLeftVec = this.vector2FromPerm(this.permutations.get2(xPrime, yPrime+1))
                     let topRightVec = this.vector2FromPerm(this.permutations.get2(xPrime+1, yPrime+1))
@@ -135,7 +129,9 @@ import * as THREE from 'https://cdn.skypack.dev/three';
             const octaveSlider = document.getElementById("octaveSlider");
             const thresholdSlider = document.getElementById("thresholdSlider");
             const visualSelect = document.getElementById("visualSelect");
-
+            const smoothCheck = document.getElementById("smoothCheckbox");
+            const ampSlider = document.getElementById("ampSlider")
+            
             // drawing
             const map2d = document.getElementById("map-2d");
             const map3d = document.getElementById("map-3d");
@@ -173,11 +169,7 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                             a *= 0.5;
                             f *= 2;
                         }
-
-                        // for(let i = 0, multiplier = 0.5; i < octaveCount; i++){
-                        //     finalMultiplier += multiplier;
-                        //     multiplier *= 0.5
-                        // }
+                        
                         total *= (1/finalMultiplier)
                         
                         if (min == null || min > total) {
@@ -212,7 +204,7 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 const height = 500;
 
                 //setup camera
-                camera = new THREE.PerspectiveCamera(25, 1, 1, 10000);
+                camera = new THREE.PerspectiveCamera(25, 2, 1, 10000);
                 camera.position.x = 1000;
                 camera.position.y = 1000;
                 camera.position.z = 1000;
@@ -241,13 +233,25 @@ import * as THREE from 'https://cdn.skypack.dev/three';
 				context.fillStyle = '#AAAAAA';
                 context.fillRect( 0, 0, 500, 500);
 
+                console.log(smoothCheck)
+
                 let data = []
-                let offset = parseInt(heightSlider.value)
+                let offset = parseFloat(heightSlider.value)
+                let amplification = parseFloat(ampSlider.value)
+
+                offset = smoothCheck.checked ? offset * ( amplification / (parseFloat(freqSlider.value))) : offset
+                
+
                 for (let y = 0; y < heights.length; y++) {
                     for (let x = 0; x < heights[y].length; x++) {
                         // data.push(x, heights[y][x], y)
                         let rgb = heights[y][x];
-                        data.push(rgb - offset);
+                        let height = rgb;
+                        if (smoothCheck.checked) {
+                            // Smoth the 3D so the frequency acts as a ZOOM, not, Density
+                            height = height * ( amplification / (parseFloat(freqSlider.value)))
+                        }
+                        data.push(height - offset);
                         context.fillStyle = `rgb(${rgb},${rgb},${rgb}`
                         context.fillRect(x, y, 1, 1)
                     }
@@ -342,11 +346,19 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 drawNoise()
                 document.getElementById("thresholdValue").innerText = thresholdSlider.value
             }
+
+            ampSlider.onchange = function() {
+                drawNoise()
+                document.getElementById("ampValue").innerText = ampSlider.value
+            }
             
             visualSelect.onchange = function() {
                 drawNoise();
             }
 
+            smoothCheck.onchange = function() {
+                drawNoise();
+            }
 
             reseedButton.onclick = function() {
                 noise2Dgen.reseed();
@@ -358,6 +370,7 @@ import * as THREE from 'https://cdn.skypack.dev/three';
                 document.getElementById("freqValue").innerText = freqSlider.value
                 document.getElementById("octaveValue").innerText = octaveSlider.value
                 document.getElementById("thresholdValue").innerText = thresholdSlider.value
+                document.getElementById("ampValue").innerText = ampSlider.value
                 drawNoise();
             }
 
