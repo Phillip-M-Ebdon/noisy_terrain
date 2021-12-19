@@ -64,6 +64,14 @@
                 <div class="control-button">
                     <button id="reseedButton"> Reseed </button>
                 </div>
+                
+                <div class="setting">
+                  <label> Noise Generator </label>
+                  <select id="generatorSelect"> 
+                      <option value="perlin"> Perlin Noise </option>
+                      <option value="simplex"> Simplex Noise </option>
+                  </select>
+              </div>
 
                 <div class="setting">
                     <label> Frequency Start</label>
@@ -139,12 +147,12 @@
                   <div id="palette">
 
                   </div>
-                </div>
+                </div>plr
 
               </div>
             </div>
         </div>
 
-        <script type="module" src="./noise.js"></script>
+        <script type="module" src="js/noise.js"></script>
     </body>
 </html>
