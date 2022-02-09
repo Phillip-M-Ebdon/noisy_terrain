@@ -1,8 +1,8 @@
 import { default as PerlinGenerator2D } from "./perlinNoise.js";
 import { default as SimplexGenerator2D } from "./simplexNoise.js";
-
+import { default as WorleyGenerator2D } from "./worleyNoise.js";
 import * as THREE from "https://cdn.skypack.dev/three";
-import { OrbitControls } from "https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls.js";
+import { OrbitControls } from 'https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls.js';
 
 // 2d generators
 let generators2D = {
@@ -16,6 +16,11 @@ let generators2D = {
         "height" : new SimplexGenerator2D(), // elevation
         "moi" : new SimplexGenerator2D(), // moisture
         "temp" : new SimplexGenerator2D() // temperature
+    },
+    "worley": {
+        "height" : new WorleyGenerator2D(500, 500, 50, 50), // elevation
+        "moi" : new WorleyGenerator2D(500, 500, 50, 50), // moisture
+        "temp" : new WorleyGenerator2D(500, 500, 50, 50) // temperature
     }
 }
 
