@@ -2,7 +2,7 @@ import { default as PerlinGenerator2D } from "./perlinNoise.js";
 import { default as SimplexGenerator2D } from "./simplexNoise.js";
 import { default as WorleyGenerator2D } from "./worleyNoise.js";
 import * as THREE from "https://cdn.skypack.dev/three";
-import { OrbitControls } from 'https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls.js';
+// import { OrbitControls } from "https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls.js";
 
 // 2d generators
 let generators2D = {
@@ -488,9 +488,9 @@ function draw3D() {
     map3d.appendChild(renderer.domElement);
 
     // controls
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.movementSpeed = 150;
-    controls.lookSpeed = 0.1;
+    // controls = new OrbitControls(camera, renderer.domElement);
+    // controls.movementSpeed = 150;
+    // controls.lookSpeed = 0.1;
 
     renderer.render(scene, camera);
     animate();
