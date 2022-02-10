@@ -1,6 +1,6 @@
 import { default as PerlinGenerator2D } from "./perlinNoise.js";
 import { default as SimplexGenerator2D } from "./simplexNoise.js";
-import { default as WorleyGenerator2D } from "./worleyNoise.js";
+// import { default as WorleyGenerator2D } from "./worleyNoise.js";
 import * as THREE from "https://cdn.skypack.dev/three";
 // import { OrbitControls } from "https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls.js";
 
