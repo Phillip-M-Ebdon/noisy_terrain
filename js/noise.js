@@ -16,12 +16,13 @@ let generators2D = {
         "height" : new SimplexGenerator2D(), // elevation
         "moi" : new SimplexGenerator2D(), // moisture
         "temp" : new SimplexGenerator2D() // temperature
-    },
-    "worley": {
-        "height" : new WorleyGenerator2D(500, 500, 50, 50), // elevation
-        "moi" : new WorleyGenerator2D(500, 500, 50, 50), // moisture
-        "temp" : new WorleyGenerator2D(500, 500, 50, 50) // temperature
     }
+    // ,
+    // "worley": {
+    //     "height" : new WorleyGenerator2D(500, 500, 50, 50), // elevation
+    //     "moi" : new WorleyGenerator2D(500, 500, 50, 50), // moisture
+    //     "temp" : new WorleyGenerator2D(500, 500, 50, 50) // temperature
+    // }
 }
 
 // settings
